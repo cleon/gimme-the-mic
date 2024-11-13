@@ -325,7 +325,7 @@ class NicknameGenerator {
         let nickname = `user-${suffix}`;
         try {
             const url = window.location.hostname == "localhost" ? "/nickname" : "https://namegen.com/more/usernames/";
-            const response = await fetch(url);
+            const response = await fetch(url, { mode: 'cors' });
             const json = await response.json();
             nickname = `${json.result[0]}${suffix}`;
         } catch (e) {
