@@ -55,6 +55,14 @@ canvas {
   background-color: red;
 }
 
+.appEnabled {
+  color: green;
+}
+
+.appDisabled {
+  color: red;
+}
+
 #feedback {
   width: calc(50% - 0.25rem);
   text-align: left;
