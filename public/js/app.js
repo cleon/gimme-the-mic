@@ -20,8 +20,6 @@ class App {
     animationFrameId;
     visualizerStream;
 
-    static appContext = { kind: "user", key: "gimme-the-mic-app" };
-
     constructor() {
         this.recording = false;
         this.flags = {
@@ -86,7 +84,7 @@ class App {
             this.speakButtonEl.classList.remove("speakButtonRecording");
         };
 
-        this.transcriber.element.addEventListener(AudioTranscriber.resulteventname, (event) => {
+        this.transcriber.element.addEventListener(this.transcriber.resulteventname, (event) => {
             stop();
             this.processTranscription(event.detail);
         });
@@ -162,10 +160,10 @@ class App {
             this.animationFrameId = requestAnimationFrame(drawWaveForm);
             analyzer.getByteTimeDomainData(array);
 
-            this.canvasContext.fillStyle = "rgb(0,0,0)";//"rgb(200, 200, 200)";
+            this.canvasContext.fillStyle = "rgb(0,0,0)";
             this.canvasContext.fillRect(0, 0, width, height);
             this.canvasContext.lineWidth = 2;
-            this.canvasContext.strokeStyle = "rgb(134 233 255)";//"rgb(0, 0, 0)";
+            this.canvasContext.strokeStyle = "rgb(134 233 255)";
             this.canvasContext.beginPath();
 
             const sliceWidth = (width * 1.0) / bufferLength;
@@ -225,7 +223,7 @@ class AudioTranscriber {
     started = false;
     recognizer;
     element;
-    static resulteventname = 'result';
+    resulteventname = 'result';
     constructor(config) {
         this.recognizer = new (window.SpeechRecognition || window.webkitSpeechRecognition || window.mozSpeechRecognition || window.msSpeechRecognition)();
         this.recognizer.continuous = false;
@@ -248,7 +246,7 @@ class WebSpeechTranscriber extends AudioTranscriber {
         super(config);
         this.recognizer.onspeechend = () => { this.stop(); };
         this.recognizer.onresult = (event) => {
-            this.element.dispatchEvent(new CustomEvent(AudioTranscriber.resulteventname, { detail: event.results[0][0].transcript + '' }));
+            this.element.dispatchEvent(new CustomEvent(this.resulteventname, { detail: event.results[0][0].transcript + '' }));
         };
     }
 
@@ -289,7 +287,7 @@ class WhisperAudioTranscriber extends AudioTranscriber {
                             this.stop();
                             this.capturedAudioBlob = new Blob(this.capturedAudioData, { type: "audio/mp4" });
                             const text = await this.#getTextfromAudioViaWhisper(this.capturedAudioBlob);
-                            this.element.dispatchEvent(new CustomEvent(AudioTranscriber.resulteventname, { detail: text }));
+                            this.element.dispatchEvent(new CustomEvent(this.resulteventname, { detail: text }));
                         });
                         this.mediaRecorder.ondataavailable = (e) => {
                             this.capturedAudioData.push(e.data);
