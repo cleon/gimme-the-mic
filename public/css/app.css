@@ -11,6 +11,7 @@ body {
   padding: 0;
   display: block;
   font-family: Arial, sans-serif;
+  font-size: 16pt;
 }
 
 section,
@@ -28,8 +29,8 @@ canvas {
 #visualizer {
   height: 60px;
   width: calc(50% - 0.25rem);
-  border: 1px solid #c8c8c8;
-  background-color: #c8c8c8;
+  border: 2px solid gray;
+  background-color: #000000;
 }
 
 #buttons {
@@ -55,8 +56,13 @@ canvas {
   background-color: red;
 }
 
+#appEnabled {
+  background-color: rgb(62, 65, 65);
+  padding: 4px;
+}
+
 .appEnabled {
-  color: green;
+  color: #66ff00;
 }
 
 .appDisabled {
@@ -67,4 +73,12 @@ canvas {
   width: calc(50% - 0.25rem);
   text-align: left;
   margin-top: 4px;
+}
+
+#feedback p {
+  font-weight: bold;
+}
+
+#feedback span {
+  font-weight: normal;
 }

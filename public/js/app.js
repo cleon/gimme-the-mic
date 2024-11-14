@@ -70,9 +70,10 @@ class App {
         this.providerEl = document.getElementById("provider");
         this.passphraseEl = document.getElementById("passphrase");
         this.appEnabledEl = document.getElementById("appEnabled");
-        this.nicknameEl.innerText = `Your username: ${this.nickname}`;
-        this.passphraseEl.innerText = `Passphrase: "${this.passphrase}"`;
-        this.appEnabledEl.innerText = `App Enabled: ${this.appEnabled}`;
+        this.nicknameEl.innerText = this.nickname;
+        this.passphraseEl.innerText = this.passphrase;
+        this.outputEl.innerText = "(waiting for audio)";
+        this.setDemoAccessMessage(this.appEnabled);
     }
 
     setupSpeakButton() {
@@ -80,7 +81,7 @@ class App {
             this.recording = false;
             this.transcriber.stop();
             this.stopAudioVisualization();
-            this.outputEl.innerText = "Waiting for audio...";
+            this.outputEl.innerText = "(waiting for audio)";
             this.speakButtonEl.innerText = "CLICK TO SPEAK";
             this.speakButtonEl.classList.remove("speakButtonRecording");
         };
@@ -95,7 +96,7 @@ class App {
                 this.recording = true;
                 this.speakButtonEl.innerText = "STOP";
                 this.speakButtonEl.classList.add("speakButtonRecording");
-                this.outputEl.innerText = "Listening...";
+                this.outputEl.innerText = "(listening)";
                 this.startAudioVisualization();
                 this.transcriber.start();
             } else {
@@ -106,7 +107,7 @@ class App {
 
     processTranscription(result) {
         result = result.trim().toLowerCase();
-        this.outputEl.innerText = `I heard: "${result}"`;
+        this.outputEl.innerText = result;
         if (result == this.passphrase.toLowerCase()) {
             if (!this.appEnabled) {
                 this.api.addUserKeyToSegment(this.appConfig.segmentKey, this.nickname);
@@ -129,7 +130,7 @@ class App {
                 console.error('Unknown voice-to-speech provider', provider);
             }
         }
-        this.providerEl.innerText = `Voice Provider: ${provider}`;
+        this.providerEl.innerText = provider;
     }
 
     initializeAudioVisualization() {
@@ -161,10 +162,10 @@ class App {
             this.animationFrameId = requestAnimationFrame(drawWaveForm);
             analyzer.getByteTimeDomainData(array);
 
-            this.canvasContext.fillStyle = "rgb(200, 200, 200)";
+            this.canvasContext.fillStyle = "rgb(0,0,0)";//"rgb(200, 200, 200)";
             this.canvasContext.fillRect(0, 0, width, height);
             this.canvasContext.lineWidth = 2;
-            this.canvasContext.strokeStyle = "rgb(0, 0, 0)";
+            this.canvasContext.strokeStyle = "rgb(134 233 255)";//"rgb(0, 0, 0)";
             this.canvasContext.beginPath();
 
             const sliceWidth = (width * 1.0) / bufferLength;
@@ -201,14 +202,19 @@ class App {
 
     passphraseChanged(newValue) {
         this.passphrase = newValue;
-        this.passphraseEl.innerText = `Passphrase: "${this.passphrase}"`;
+        this.passphraseEl.innerText = this.passphrase;
     }
 
     updateAppEnabled(newValue) {
         this.appEnabled = newValue;
-        this.appEnabledEl.innerText = `App Enabled: ${this.appEnabled}`;
-        this.appEnabledEl.classList.toggle("appEnabled", this.appEnabled);
-        this.appEnabledEl.classList.toggle("appDisabled", !this.appEnabled);
+        this.setDemoAccessMessage(this.appEnabled);
+    }
+
+    setDemoAccessMessage(demoEnabled) {
+        const message = demoEnabled ? "Congrats, you get access to the demo!" : "Sorry, you don't have access to this demo.";
+        this.appEnabledEl.innerText = message;
+        this.appEnabledEl.classList.toggle("appEnabled", demoEnabled);
+        this.appEnabledEl.classList.toggle("appDisabled", !demoEnabled);
     }
 
     run() {
@@ -335,7 +341,7 @@ class NicknameGenerator {
         let nickname = `user-${suffix}`;
         try {
             const url = window.location.hostname == "localhost" ? "/nickname" : "https://namegen.com/more/usernames/";
-            const response = await fetch(url, { mode: 'cors', method: 'GET', headers: { 'Content-Type': 'application/json' } });
+            const response = await fetch(url, { method: 'GET' });
             const json = await response.json();
             nickname = `${json.result[0]}${suffix}`;
         } catch (e) {
@@ -357,88 +363,88 @@ class LaunchDarklyAPI {
         this.LDEnvKey = environmentKey;
     }
 
-    async addUserKeyToFlagRule(flagKey, contextKey) {
-        try {
-            const flag = await this.getFlag(flagKey);
-            if (!flag.rules || flag.rules.length == 0) {
-                await this.addEmptyRuleToFlag(flagKey);
-            }
-            const response = await fetch(`https://app.launchdarkly.com/api/v2/flags/${this.LDProjectKey}/${flagKey}`,
-                {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json', Authorization: this.LDApiKey },
-                    body: JSON.stringify({
-                        patch: [
-                            {
-                                op: "add",
-                                path: `/environments/${this.LDEnvKey}/rules/0/clauses/0/values/-`,
-                                value: contextKey
-                            }
-                        ]
-                    })
-                }
-            );
-            if (!response.ok) {
-                throw new Error(await response.text());
-            }
-        } catch (e) {
-            console.error('Error adding user key to flag rule', e);
-        }
-    }
+    // async addUserKeyToFlagRule(flagKey, contextKey) {
+    //     try {
+    //         const flag = await this.getFlag(flagKey);
+    //         if (!flag.rules || flag.rules.length == 0) {
+    //             await this.addEmptyRuleToFlag(flagKey);
+    //         }
+    //         const response = await fetch(`https://app.launchdarkly.com/api/v2/flags/${this.LDProjectKey}/${flagKey}`,
+    //             {
+    //                 method: 'PATCH',
+    //                 headers: { 'Content-Type': 'application/json', Authorization: this.LDApiKey },
+    //                 body: JSON.stringify({
+    //                     patch: [
+    //                         {
+    //                             op: "add",
+    //                             path: `/environments/${this.LDEnvKey}/rules/0/clauses/0/values/-`,
+    //                             value: contextKey
+    //                         }
+    //                     ]
+    //                 })
+    //             }
+    //         );
+    //         if (!response.ok) {
+    //             throw new Error(await response.text());
+    //         }
+    //     } catch (e) {
+    //         console.error('Error adding user key to flag rule', e);
+    //     }
+    // }
 
-    async getFlag(flagKey) {
-        let flag;
-        try {
-            const resp = await fetch(`https://app.launchdarkly.com/api/v2/flags/${this.LDProjectKey}/${flagKey}`,
-                {
-                    method: 'GET',
-                    headers: { Authorization: this.LDApiKey }
-                }
-            );
-            const json = await resp.json();
-            flag = json.environments[`${this.LDEnvKey}`];
-        } catch (e) {
-            console.error('Error getting feature flag info', e);
-        } finally {
-            return flag || {};
-        }
-    }
+    // async getFlag(flagKey) {
+    //     let flag;
+    //     try {
+    //         const resp = await fetch(`https://app.launchdarkly.com/api/v2/flags/${this.LDProjectKey}/${flagKey}`,
+    //             {
+    //                 method: 'GET',
+    //                 headers: { Authorization: this.LDApiKey }
+    //             }
+    //         );
+    //         const json = await resp.json();
+    //         flag = json.environments[`${this.LDEnvKey}`];
+    //     } catch (e) {
+    //         console.error('Error getting feature flag info', e);
+    //     } finally {
+    //         return flag || {};
+    //     }
+    // }
 
-    async addEmptyRuleToFlag(flagKey) {
-        try {
+    // async addEmptyRuleToFlag(flagKey) {
+    //     try {
 
-            const response = await fetch(`https://app.launchdarkly.com/api/v2/flags/${this.LDProjectKey}/${flagKey}`,
-                {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json', Authorization: this.LDApiKey },
-                    body: JSON.stringify({
-                        patch: [
-                            {
-                                op: "add",
-                                path: `/environments/${this.LDEnvKey}/rules/-`,
-                                value: {
-                                    variation: 0,
-                                    clauses: [
-                                        {
-                                            attribute: "key",
-                                            op: "in",
-                                            values: [App.appContext.key],
-                                            contextKind: "user"
-                                        }
-                                    ],
-                                }
-                            }
-                        ]
-                    })
-                }
-            );
-            if (!response.ok) {
-                throw new Error(await response.text());
-            }
-        } catch (e) {
-            console.error('Error adding empty rule to flag', e);
-        }
-    }
+    //         const response = await fetch(`https://app.launchdarkly.com/api/v2/flags/${this.LDProjectKey}/${flagKey}`,
+    //             {
+    //                 method: 'PATCH',
+    //                 headers: { 'Content-Type': 'application/json', Authorization: this.LDApiKey },
+    //                 body: JSON.stringify({
+    //                     patch: [
+    //                         {
+    //                             op: "add",
+    //                             path: `/environments/${this.LDEnvKey}/rules/-`,
+    //                             value: {
+    //                                 variation: 0,
+    //                                 clauses: [
+    //                                     {
+    //                                         attribute: "key",
+    //                                         op: "in",
+    //                                         values: [App.appContext.key],
+    //                                         contextKind: "user"
+    //                                     }
+    //                                 ],
+    //                             }
+    //                         }
+    //                     ]
+    //                 })
+    //             }
+    //         );
+    //         if (!response.ok) {
+    //             throw new Error(await response.text());
+    //         }
+    //     } catch (e) {
+    //         console.error('Error adding empty rule to flag', e);
+    //     }
+    // }
 
     async addUserKeyToSegment(segmentKey, contextKey) {
         try {
