@@ -10,16 +10,18 @@
 <body>
     <div id="main">
         <section id="controls">
+            <h2>Wanna see my LaunchDarkly demo? You gotta say the magic passphrase!</h2>
+            <p>&nbsp;</p>
             <canvas id="visualizer"></canvas>
             <div id="buttons">
                 <button id="speakButton" class="speakButtonStopped">CLICK TO SPEAK</button>
             </div>
         </section>
         <section id="feedback">
-            <p id="provider" />
-            <p id="nickname" />
-            <p id="passphrase" />
-            <p id="transcription">Waiting for audio...</p>
+            <p>Speech-to-text Provider: <span id="provider" /></p>
+            <p>Your username: <span id="nickname" /></p>
+            <p>Passphrase: <span id="passphrase" /></p>
+            <p>I heard: <span id="transcription" /></p>
             <p>&nbsp;</p>
             <p id="appEnabled" class="appDisabled" />
         </section>
