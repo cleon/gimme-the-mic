@@ -52,6 +52,8 @@ class App {
             this.passphrase = this.ldClient.variation(this.flags.passphrase.key, this.flags.passphrase.default);
             this.appEnabled = this.ldClient.variation(this.flags.appEnabled.key, this.flags.appEnabled.default);
             this.ldClient.on(`change:${this.flags.voiceProvider.key}`, (value) => this.voiceProviderChanged(value));
+            this.ldClient.on(`change:${this.flags.passphrase.key}`, (value) => this.passphraseChanged(value));
+            this.ldClient.on(`change:${this.flags.appEnabled.key}`, (value) => this.updateAppEnabled(value));
             this.api = new LaunchDarklyAPI(this.appConfig.apiKey, this.appConfig.projectKey, this.appConfig.environmentKey);
         } catch (e) {
             console.error('Error initializing LaunchDarkly', e);
@@ -76,11 +78,11 @@ class App {
     setupSpeakButton() {
         const stop = () => {
             this.recording = false;
+            this.transcriber.stop();
+            this.stopAudioVisualization();
             this.outputEl.innerText = "Waiting for audio...";
             this.speakButtonEl.innerText = "CLICK TO SPEAK";
             this.speakButtonEl.classList.remove("speakButtonRecording");
-            this.stopAudioVisualization();
-            this.transcriber.stop();
         };
 
         this.transcriber.element.addEventListener(AudioTranscriber.resulteventname, (event) => {
@@ -107,10 +109,7 @@ class App {
         this.outputEl.innerText = `I heard: "${result}"`;
         if (result == this.passphrase.toLowerCase()) {
             if (!this.appEnabled) {
-                this.api.addUserKeyToFlagRule(this.flags.appEnabled.key, this.nickname).then(() => {
-                    this.appEnabled = true;
-                    this.appEnabledEl.innerText = `App Enabled: ${this.appEnabled}`;
-                });
+                this.api.addUserKeyToSegment(this.appConfig.segmentKey, this.nickname);
             }
         }
     }
@@ -131,7 +130,6 @@ class App {
             }
         }
         this.providerEl.innerText = `Voice Provider: ${provider}`;
-        this.transcriber.start();
     }
 
     initializeAudioVisualization() {
@@ -199,6 +197,18 @@ class App {
         this.transcriber = null;
         this.initializeTranscriber();
         this.setupSpeakButton();
+    }
+
+    passphraseChanged(newValue) {
+        this.passphrase = newValue;
+        this.passphraseEl.innerText = `Passphrase: "${this.passphrase}"`;
+    }
+
+    updateAppEnabled(newValue) {
+        this.appEnabled = newValue;
+        this.appEnabledEl.innerText = `App Enabled: ${this.appEnabled}`;
+        this.appEnabledEl.classList.toggle("appEnabled", this.appEnabled);
+        this.appEnabledEl.classList.toggle("appDisabled", !this.appEnabled);
     }
 
     run() {
@@ -427,6 +437,30 @@ class LaunchDarklyAPI {
             }
         } catch (e) {
             console.error('Error adding empty rule to flag', e);
+        }
+    }
+
+    async addUserKeyToSegment(segmentKey, contextKey) {
+        try {
+            const response = await fetch(`https://app.launchdarkly.com/api/v2/segments/${this.LDProjectKey}/${this.LDEnvKey}/${segmentKey}`,
+                {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json; domain-model=launchdarkly.semanticpatch',
+                        Authorization: this.LDApiKey
+                    },
+                    body: JSON.stringify({
+                        instructions: [
+                            { kind: "addIncludedUsers", values: [`${contextKey}`] }
+                        ]
+                    })
+                }
+            );
+            if (!response.ok) {
+                throw new Error(await response.text());
+            }
+        } catch (e) {
+            console.error('Error adding user key to segment', e);
         }
     }
 }
