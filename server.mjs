@@ -4,8 +4,8 @@ import fetch from "node-fetch";
 const port = 8080;
 const app = express();
 
-app.use(express.static("public"));
-//app.use(express.static(`${import.meta.dirname}`));
+//app.use(express.static("public"));
+app.use(express.static(`${import.meta.dirname}`));
 
 app.get("/", (req, res) => {
     res.sendFile(`${import.meta.dirname}/index.html`);
